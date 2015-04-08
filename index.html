@@ -1,0 +1,438 @@
+<html>
+
+<!--
+
+Imagine que você tem um motor de uma máquina (um servomotor) e você deseja
+escrever o software para fazer essa máquina (motor) funcionar. Digamos que seja
+para posicionamento linear de um eixo.
+
+O único mecanismo de ação do motor é um comando de velocidade. Em outras palavras,
+esse motor funciona com um sinal de entrada proporcional à velocidade desejada
+(digamos que a tensão seja proporcional à velocidade, e uma tensão de +10V corresponde
+à velocidade máxima de 300 RPM do motor).
+
+Você está escrevendo o software para controle desse motor. O que você faz?
+
+-->
+
+<body>
+
+<style type="text/css" media="screen">
+    #editor { 
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        height: 30em;
+        width: 60%;
+        opacity: 0.96;
+    }    
+</style>
+
+<div id="editor">function foo(items) {
+    var x = "All this is syntax highlighted";
+    return x;
+}</div>
+
+<canvas id="myCanvas" width="1000" height="600" style="border:1px solid #000000;">
+</canvas> 
+
+<div style="float: right;">
+    <input type="checkbox" id="pause"> Pausar   
+    <br>
+    <input type="checkbox" id="habPid"> Habilitar Cálculo Velocidade<br>    
+    
+    <hr>
+    Fase<br>
+    <button type="button" class="btnFase" data-fase-show="1">1</button>
+    <button type="button" class="btnFase" data-fase-show="2">2</button>
+    <button type="button" class="btnFase" data-fase-show="3">3</button>
+    <button type="button" class="btnFase" data-fase-show="4">4</button>
+    <button type="button" class="btnFase" data-fase-show="5">5</button>
+    <button type="button" class="btnFase" data-fase-show="6">6</button>
+    <button type="button" class="btnFase" data-fase-show="7">7</button>
+    
+    <hr>
+    <input type="text" style="width: 4em" id="velManual">
+    <button type="button" id="btnSetarVel">setar velocidade</button>
+    
+    <hr>    
+    <input type="text" style="width: 4em" id="posDesejada" value="500">
+    <button type="button" id="btnSetarPosDesejada">setar pos desejada</button>
+    
+    <div data-fase="7" style="display: none;">
+    <hr>
+    <input type="text" style="width: 4em" id="posDesejadaAcel" value="500">
+    <button type="button" id="btnMoverAcel">Mover com acel.</button>
+    </div>
+    
+    <div data-fase="6" style="display: none;">
+    <hr>
+    Kp <input type="text" style="width: 3em" id="kp" value="0.01">
+    Ki <input type="text" style="width: 3em" id="ki" value="0.00">
+    Kd <input type="text" style="width: 3em" id="kd" value="0.1">
+    </div>
+    
+    <hr>
+    <button type="button" id="btnCodigo">Código</button>
+    
+
+</div>
+
+<script>
+    var seriesPosicao = [0];
+    var seriesVelocidade = [0];
+    var seriesPosDesejada = [0];
+    var seriesErro = [0];
+    var seriesSomaErro = [0];
+    var seriesVelErro = [0];
+    var seriesVelTrajetoria = [0];
+    var seriesRuido = [0];
+    
+    var velocidadeMotor = 0;
+    var posicaoDesejada = 0;
+    var erroAcumulado = 0;
+    var ruidoAccum = 0;
+    
+    var velMaximaMotor = 3;
+    
+    var moverComAcel = {ativo: false, acel: 0.04, vel: 0, posFinal: 250, velMaxMov: 3, dirMov: 1, distDesacel: 112.5};
+
+    var kp=0, ki=0, kd=0;
+    
+    var numIteracao = 0;
+    
+    var funcCalcPid = 'calculoPid1';
+    
+    var faseAtual = 1;
+    
+    Array.prototype.addToSeries = function(val) {
+        this.push(val);
+        if (this.length > 1000) {
+            this.splice(0, 1);
+        }
+    };
+    
+    function rnd_snd() {
+        return (Math.random()*2-1)+(Math.random()*2-1)+(Math.random()*2-1);
+    }
+    
+    function rnd(mean, stdev) {
+        return Math.round(rnd_snd()*stdev+mean);
+    }
+    
+    function renderSeries(series, opts) {
+        if (series.length == 0) return;        
+        
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        ctx.strokeStyle = opts.color;
+        ctx.lineWidth=2;        
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(0, series[0]*-opts.yScale + opts.yOffset);
+
+        for (var i = 1; i < series.length; i++) {
+            ctx.lineTo(i, series[i]*-opts.yScale+opts.yOffset);
+        }
+        
+        ctx.stroke();
+        
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5]);
+        ctx.beginPath();
+        ctx.moveTo(0, opts.yOffset);
+        ctx.lineTo(1000, opts.yOffset);
+        ctx.stroke();
+        
+        ctx.fillStyle = opts.color;
+        ctx.font = 'italic bold 10px sans-serif';
+        ctx.textBaseline = 'bottom';
+        if (opts.color == "#ff0000") {
+            ctx.fillText(opts.label, 5, opts.yOffset+10); //hack pro texto aparecer em baixo da linha...
+        } else {
+            ctx.fillText(opts.label, 5, opts.yOffset);
+        }
+    }
+    
+    function sign(number) {
+        return number < 0 ? -1 : +1;
+    }
+    
+        
+    function calculoPid1(ultimaPos, posicaoDesejada) {
+        //tentativa mais trivial: mover na direção da posição desejada
+        if (posicaoDesejada > ultimaPos) {
+            velocidadeMotor = 1;
+        } else if (posicaoDesejada < ultimaPos) {
+            velocidadeMotor = -1;
+        }
+    }
+    
+        
+    function calculoPid2(ultimaPos, posicaoDesejada) {
+        //levar em consideração quando chega na posição desejada
+        if (posicaoDesejada == ultimaPos) {
+            velocidadeMotor = 0;
+        } else if (posicaoDesejada > ultimaPos) {
+            velocidadeMotor = 1;
+        } else if (posicaoDesejada < ultimaPos) {
+            velocidadeMotor = -1;
+        }
+    }
+    
+        
+    function calculoPid3(ultimaPos, posicaoDesejada) {
+        //levar em consideração quando mover em posições não exatas (com ponto decimal)
+        if (posicaoDesejada == ultimaPos) {
+            velocidadeMotor = 0;
+        } else if (posicaoDesejada > ultimaPos) {            
+            if ((posicaoDesejada - ultimaPos) < 1) {
+                velocidadeMotor = posicaoDesejada - ultimaPos;
+            } else {
+                velocidadeMotor = 1;
+            }
+        } else if (posicaoDesejada < ultimaPos) {
+            if (ultimaPos - posicaoDesejada < 1) {
+                velocidadeMotor = posicaoDesejada - ultimaPos;
+            } else {
+                velocidadeMotor = -1;
+            }
+        }
+    }
+    
+    
+    function calculoPid4(ultimaPos, posicaoDesejada, erro) {
+        //usar erro de posicionamento ao invés de posições
+        //erro = posicaoDesejada - ultimaPos        
+        //isso simplifica a função de velocidade
+        if ((erro < 1) && (erro > 0)) velocidadeMotor = -erro;
+        else if ((erro > -1) && (erro < 0)) velocidadeMotor = -erro;
+        else if (erro > 0) velocidadeMotor = +1;
+        else if (erro < 0) velocidadeMotor = -1;
+        else velocidadeMotor = 0;
+    }
+    
+    function calculoPid5(ultimaPos, posicaoDesejada, erro) {
+        //O erro é proporcional à velocidade desejada (ou o contrário: a velocidade
+        //desejada sempre é proporcional ao erro).
+        //então podemos simplificar ainda mais a função
+        velocidadeMotor = erro;
+    }
+    
+    
+    
+    function calculoPid6(ultimaPos, posicaoDesejada, erro, somaErro, velErro, kp, ki, kd) {
+        //podemos querer aumentar o diminuir a velocidade de correção, então usamos
+        //uma constante de proporcionalidade para controlar a velocidade de correção
+        //do erro
+        velocidadeMotor = erro * kp;
+    }
+    
+    
+    
+    function calculoPid7(ultimaPos, posicaoDesejada, erro, somaErro, velErro, kp, ki, kd) {
+        velocidadeMotor = erro*kp + somaErro * ki + velErro *kd;        
+    }
+    
+    
+    
+    
+    function calcMovimentoComAcel() {
+        var m = moverComAcel;
+        var paraMover = Math.abs(m.posFinal - posicaoDesejada);
+        
+        if (paraMover < 0.04) {
+            m.ativo = false;
+            posicaoDesejada = m.posFinal;
+            return;
+        }
+        
+        if (paraMover < m.distDesacel) {
+            m.vel = Math.max(m.vel - m.acel, 0);             
+        } else if (m.vel < velMaximaMotor) {
+            m.vel = Math.min(m.vel + m.acel, velMaximaMotor);
+        }
+        posicaoDesejada = posicaoDesejada + m.vel * m.dirMov;        
+        
+        seriesVelTrajetoria.addToSeries(m.vel);
+                
+    }
+    
+    function calcSinais() {
+        if (moverComAcel.ativo) calcMovimentoComAcel();
+        else seriesVelTrajetoria.addToSeries(0);
+        
+        var ultimaPos = seriesPosicao[seriesPosicao.length-1];
+        var erro = posicaoDesejada - ultimaPos;
+        
+        var ultimoErro = seriesErro[seriesErro.length-1];
+        var velErro = erro - ultimoErro;
+        
+        erroAcumulado = ki == 0 ? 0 : erroAcumulado + erro;
+        
+        if ($("#habPid").prop("checked")) {
+            //calculoPid3(ultimaPos, erro, erroAcumulado, velErro);
+            window[funcCalcPid](ultimaPos, posicaoDesejada, erro, erroAcumulado, velErro, kp, ki, kd);
+        }
+        
+        if (velocidadeMotor > velMaximaMotor) var vel = velMaximaMotor;
+        else if (velocidadeMotor < -velMaximaMotor) var vel = -velMaximaMotor
+        else var vel = velocidadeMotor;
+        
+        
+        //ruido = (Math.sin(numIteracao / 10)*2*Math.PI)*0.05; //ruído periódico
+        //ruido = rnd(0, 100)/400;  //ruído gaussiano
+        ruido = 0; //sem ruído
+        
+        
+        var novaPosicao = ultimaPos + vel + ruido;        
+        
+        seriesPosicao.addToSeries(novaPosicao);                
+        seriesPosDesejada.addToSeries(posicaoDesejada);
+        seriesErro.addToSeries(erro);
+        seriesVelocidade.addToSeries(vel);
+        seriesSomaErro.addToSeries(erroAcumulado);
+        seriesVelErro.addToSeries(velErro);
+        seriesRuido.addToSeries(ruido);
+        
+        numIteracao++;
+    }
+    
+    function render() {
+        var pausado = $("#pause").prop('checked');
+        if (!pausado) {
+            calcSinais();
+        }
+    
+    
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        ctx.fillStyle="#ffffff";
+        ctx.fillRect(0,0,1000,1000);         
+        
+        renderSeries(seriesPosicao, {label: 'posição', color: '#ff0000', yOffset: 300, yScale: 0.1});
+        renderSeries(seriesPosDesejada, {label: 'posDesejada', color: '#0000ff', yOffset: 300, yScale: 0.1});        
+        renderSeries(seriesVelocidade, {label: 'velocidade', color: '#00ff00', yOffset: 200, yScale: 10});
+        
+        
+        if (faseAtual > 3) {
+            renderSeries(seriesErro, {label: 'erro', color: '#cccc00', yOffset: 400, yScale: 1});
+        }
+        
+        if (faseAtual > 6) {
+            renderSeries(seriesSomaErro, {label: 'somaErro', color: '#cc00cc', yOffset: 500, yScale: 0.1});
+            renderSeries(seriesVelErro, {label: 'velErro', color: '#00cccc', yOffset: 550, yScale: 0.1});
+            renderSeries(seriesVelTrajetoria, {label: 'velTrajetoria', color: '#00ccee', yOffset: 100, yScale: 10});
+            renderSeries(seriesRuido, {label: 'ruído', color: '#cc00ee', yOffset: 50, yScale: 10});
+        }
+    }
+    
+    function btnSetarVelClicked(e) {
+        velocidadeMotor = parseFloat($("#velManual").val());
+    }
+    
+    function btnSetarPosDesejadaClicked(e) {
+        posicaoDesejada = parseFloat($("#posDesejada").val());
+    }
+    
+    function btnMoverAcelClicked(e) {
+        var m = moverComAcel;
+        var distAcelVelMax = 0.5 * m.acel * Math.pow(velMaximaMotor/m.acel, 2);        
+        console.log(distAcelVelMax);
+        var pos = parseFloat($("#posDesejadaAcel").val());
+        var distMov = pos - posicaoDesejada;
+        if (distMov < 0) {
+            m.dirMov = -1;
+            distMov = -distMov;
+        } else {
+            m.dirMov = 1;
+        }
+        if (distMov < distAcelVelMax) {
+            m.distDesacel = distMov / 2;
+        } else {
+            m.distDesacel = distAcelVelMax;
+        }
+        m.posFinal = pos;
+        m.vel = 0;
+        console.log(JSON.stringify(m));
+        
+        moverComAcel.ativo = true;
+        
+    }
+    
+    function kIndexChanged(e) {
+        var altK = function (kname) {
+            var x = parseFloat($("#"+kname).val());
+            if (x !== NaN) {
+                window[kname] = x;
+            }
+        };
+        altK('kp');
+        altK('ki');
+        altK('kd');
+        console.log(kp + '   ' + ki + '   ' + kd);
+    }
+    
+    function initSeries(series, tamanho) {
+        for (var i = 0; i < tamanho; i++) {
+            series.push(0);
+        }
+    }
+    
+    function btnCodigoClicked() {   
+        $("#editor").toggle();
+    }
+    
+    function btnFaseClicked(e) {
+        var fase = parseInt($(e.target).attr("data-fase-show"));        
+        for (var i = 0; i <= fase; i++) {   
+            $("[data-fase='"+i+"']").show();
+        }
+        for (var i = fase+1; i < 10; i++) {
+            $("[data-fase='"+i+"']").hide();
+        }
+        
+        var editor = ace.edit("editor");
+        funcCalcPid = 'calculoPid' + fase;
+        editor.setValue(window[funcCalcPid].toString());
+        faseAtual = fase;
+    }
+    
+    function setup() {  
+        initSeries(seriesPosicao, 200);
+        initSeries(seriesPosDesejada, 200);
+        initSeries(seriesErro, 200);
+        initSeries(seriesSomaErro, 200);
+        initSeries(seriesVelErro, 200);
+        initSeries(seriesVelocidade, 200);
+        initSeries(seriesVelTrajetoria, 200);
+        initSeries(seriesRuido, 200);
+        
+        setInterval(render, 5);
+        //renderSeries([10, 20, 30, 40], {});
+        $("#btnSetarVel").on('click', btnSetarVelClicked);
+        $("#btnSetarPosDesejada").on('click', btnSetarPosDesejadaClicked);
+        $("#btnMoverAcel").on('click', btnMoverAcelClicked);
+        $("#velManual").val(0.1);
+        $("#kp,#ki,#kd").on('change', kIndexChanged);
+        
+        $("#btnCodigo").on('click', btnCodigoClicked);
+        $(".btnFase").on('click', btnFaseClicked);
+        
+        kIndexChanged();
+    }
+</script>
+
+<script src="jquery-1.11.1.js"></script>
+
+<script src="ace-min/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/javascript");
+    editor.setValue(window['calculoPid1'].toString());
+</script>
+
+<script>$(document).ready(setup);</script>
+</body>
+</html>
