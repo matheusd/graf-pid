@@ -1,0 +1,351 @@
+<html>
+
+<div id="p1">
+    <p>Vamos aprender a programar um PID e ganhar um pouco de intuição sobre seu
+    funcionamento.</p>
+</div>
+
+<div id="p2">
+    <p>Imagine a seguinte situação: você, um engenheiro ou programador recém formado foi 
+    contratado para automatizar uma máquina de corte linear.</p>
+        
+    <p>Essa máquina consiste em um motor, conectado através de um sistema de transmissão
+    na ferramenta (digamos, uma serra) que se movimenta em uma linha vertical.<p>
+</div>    
+    
+<div id="p3">    
+    <p>Quando o motor gira no sentido horário a ferramenta se movimenta em um sentido
+    (digamos, de baixo para cima) e quando o motor gira
+    no sentido anti-horário a ferramenta se movimenta no sentido inverso (de cima 
+    para baixo ou sentido negativo).</p>
+    
+    <p>Cada giro do motor provoca uma movimentação proporcional na ferramenta. Digamos
+    que devido ao sistema de transmissão feito, um giro do motor equivale a 1 mm
+    de movimentação linear da ferramenta. E que esse sistema suporta uma velocidade
+    máxima de 3mm/segundo. Ou seja, o motor gira a uma velocidade máxima de 3 rotações
+    por segundo.<p>
+</div>    
+    
+<div id="p4">    
+    
+    <p>Para a automação desse sistema você tem apenas 3 elementos físicos com os
+    quais pode interagir: a posição atual do motor (que, lembrando, é proporcional a 
+    da ferramenta), a posição desejada para a ferramenta (digamos que seja a posição
+    de um material que será cortado) e a velocidade de giro do motor, que você
+    pode usar para controlar o posicionamento do sistema.</p>
+    
+    <p>Como você faria o posicionamento se estivesse controlando a máquina manualmente?</p>
+</div>    
+    
+<div id="p5">        
+    <p>Digamos que a ferramenta deve estar na posição x = 500mm. Ou seja, queremos
+    girar o motor até que a ferramenta se posicione a 500 milímetros acima do seu ponto
+    central de referência.</p>
+    
+    <p>Manualmente, faríamos o seguinte: acelerar o motor até que ele se aproxime da
+    posição desejada. Conforme ele se aproxima dessa posição, iríamos desacelerar
+    a velocidade do motor até que ele atingisse a posição. Nesse momento, desligaríamos
+    o motor.</p>
+    
+    <p>Para te ajudar, eu coloquei a posição desejada da máquina como 500.<p>
+    
+    <p>Tente colocar a máquina na posição desejada agora!<p>
+    
+    <script>
+        function script_p5() {
+            $("#posDesejada").val(500);
+            $("#btnSetarPosDesejada").click();
+            $("#btnSetarVel").focus();
+        }
+    </script>
+</div>    
+    
+<div id="p6">    
+    
+    
+    <p>Ok. Manualmente, conseguimos posicionar o motor/ferramenta próximo a posição
+    desejada. </p>
+    
+    <p>Espero que você tenha percebido algumas coisas: se você quer mover a ferramenta
+    para baixo, deve colocar a velocidade com um valor negativo. Se a ferramenta ultrapassa
+    o ponto desejado, você precisa alterar a velocidade para o sentido inverso.
+    Para manter a ferramenta em uma posição fixa, sua velocidade deve ser igual a 
+    zero.</p> 
+    
+</div>    
+    
+<div id="p7">        
+    
+    <p>
+    Como faríamos esse mesmo procedimento de forma automatizada? Como podemos criar
+    um programa de computador que seja capaz de posicionar a ferramenta, considerando
+    que temos apenas 2 informações disponíveis (posição desejada e posição atual) e
+    apenas 1 mecanismo de atuação (velocidade do motor)?</p>
+    
+    <p>Com seus conhecimentos de programação, qual seria o programa mais simples capaz
+    de solucionar esse problema? Pense um pouco!.</p>
+    
+    <script>
+        function script_p7() {
+            exibirFase(1);
+        }
+    </script>
+</div>    
+    
+<div id="p8">        
+    
+    <p>O algoritmo mais trivial que consigo imaginar seria algo assim: caso a posição
+    desejada para a ferramenta esteja acima da posição atual (ou seja, no 
+    sentido positivo do eixo), giramos o motor no sentido positivo. Caso contrário
+    (ou seja, caso a posição desejada esteja abaixo da posição atual - sentido
+    negativo do eixo) giramos o motor no sentido negativo.</p>
+    
+    <p>Expresso em código, seria algo parecido com o que você vê acima.</p>
+    
+    <p>Experimente alterar a posição desejada para vários valores para ver
+    o que acontece (tente por exemplo, 100, 200, -100, 0).</p>
+    
+    <script>
+        function script_p8() {
+            exibirFase(2);
+            $("#habPid").attr("checked", "checked");
+            
+            $("#posDesejada").val(100);
+            $("#btnSetarPosDesejada").click();
+            $("#btnSetarVel").focus();            
+        }
+    </script>
+</div>    
+    
+<div id="p9">        
+    
+    
+    <p>Lembre-se: o motor com velocidade positiva significa que ele se movimenta
+    para cima. Motor com velocidade negativa significa que ele se movimenta para
+    baixo.</p>
+    
+    <p>Veja que habilitando esse código, ao ficar bem próximo à posição desejada
+    a velocidade do motor começa a variar de forma significativa. Por que?</p>
+    
+</div>    
+    
+<div id="p10">            
+    
+    <p>Porque esquecemos do caso zero! Quando a posição desejada é exatamente
+    igual à posição atual, podemos parar o motor completamente.</p>
+    
+    <script>
+        function script_p10() {
+            exibirFase(3);
+        }
+    </script>
+</div>    
+    
+<div id="p11">            
+    
+    <p>Perfeito! Agora nosso sistema automatizado é capaz de movimentar um eixo
+    linear e posicioná-lo em qualquer lugar. Ou quase. Experimente tentar posicioná-lo
+    em uma posição não-inteira (decimal). Tente 100.30 por exemplo. O que acontece?</p>
+</div>    
+    
+<div id="p12">            
+    
+    <p>Mais oscilação na velocidade do motor. Esse tipo de problema pode ser chamado de
+    instabilidade numérica: o nosso algoritmo não se comporta bem com números
+    fracionados.</p>
+    
+    <p>Como podemos deixar o algoritmo mais estável? Você consegue pensar em alguma
+    alternativa?</p>
+</div>    
+    
+<div id="p13">            
+    
+    <p>Identifique quando o problema de instabilidade ocorre. Ele ocorre quando
+    a distância entre a posição desejada e a posição atual é menor do que a 
+    velocidade de correção (1 mm/segundo).</p>
+    
+    <p>Quando a distância é menor que esse valor, o motor salta para uma posição
+    além da posição desejada (evento chamado de <i>overshoot</i>). No próximo
+    ciclo, o nosso algoritmo tenta corrigir esse salto voltando, porém novamente
+    para uma posição além da desejada.</p>
+</div>    
+    
+<div id="p14">            
+    
+    <p>De forma bem prática: se desejamos alcançar a posição x = 100.30 e a posição
+    atual é 100.00, a velocidade do motor de +1 irá provocar um overshoot para 
+    a posição 101.00. No próximo ciclo, a velocidade do motor será recalculada
+    para -1 e o motor irá se movimentar até a posição x = 100.00. Esse vai e vem
+    é que gera a oscilação.</p>
+    
+    <p>Devemos então modificar esse algoritmo para considerar o caso quando a 
+    diferença entre a posição atual e a posição desejada é menor que 1 (a velocidade
+    de correção. Como fazer isso?</p>
+</div>    
+    
+<div id="p15">            
+    
+    <p>Uma possibilidade é a alteração indicada acima. Consideramos o caso tanto
+    do motor que está abaixo do ponto desejado quanto acima.</p>
+    
+    <p>Esse algoritmo é mais robusto que os anteriores. Porém ele tem dois problemas:
+    um funcional e um estético.</p>
+    
+    <script>
+        function script_p15() {
+            exibirFase(4);
+        }
+    </script>
+</div>    
+    
+<div id="p16">            
+    
+    <p>Embora resolva o nosso problema, esse algoritmo não leva em consideração
+    que a velocidade do motor pode ser maior.</p>
+    
+    <p>Um outro problema é que esse algoritmo é complexo: veja a quantidade de
+    cláusulas <i>IF</i>, uma dentro da outra. Não é um código agradável de se
+    ler, entender e depurar.</p>
+    
+    <p>Como podemos simplificar esse código?</p>
+</div>    
+    
+<div id="p17">            
+    
+    <p>A primeira medida é notar que o código é totalmente baseado em comparações
+    entre a posição desejada e a atual. Podemos simplificar a relação entre essas
+    duas variáveis introduzindo uma terceira: a noção de "erro de posicionamento".</p>
+    
+    <p>O erro de posicionamento é a diferença entre a posição atual e a posição
+    desejada. Literalmente: é a primeira variável menos a segunda.<p>
+    
+    <p>O erro de posicionamento (ou simplesmente "erro") é uma medida de distância
+    entre a posição atual e desejada. Ele diz o quão longe uma está da outra.<p>
+</div>    
+    
+<div id="p18">            
+    
+    <p>Quanto maior o erro, mais distante a ferramenta está de onde queremos que
+    ela fique. Quanto menor, mais próxima. Quando o erro é exatamente zero, 
+    a ferramenta está exatamente onde queremos que ela esteja.</p>
+    
+    <p>Com essa noção de "erro" podemos simplificar nosso algoritmo da seguinte
+    forma: Ao invés de comparar as posições entre si, comparamos apenas se o 
+    erro é maior que zero (precisamos mover para cima) ou se o erro é menor
+    que zero (precisamos mover para baixo).</p>
+    
+    <script>
+        function script_p18() {
+            exibirFase(5);
+        }
+    </script>    
+</div>    
+    
+<div id="p19">            
+    
+    <p>Se o erro estiver entre zero e a velocidade de correção, movimentamos o
+    motor apenas o suficiente para que ele alcance a posição desejada.</p>
+    
+    <p>Tente verificar os diversos casos de movimentação e verifique que realmente
+    funciona!</p>
+</div>    
+    
+<div id="p20">            
+    
+    <p>Esse algoritmo já é bem mais simples de se entender. Mas ainda não resolvemos
+    o problema da velocidade máxima. Será que podemos fazer melhor?</p>
+    
+    
+    <p>Note nesse último algoritmo que a velocidade do motor sempre segue o erro:
+    se o erro é positivo, a velocidade é positiva. Se o erro é negativo, a velocidade
+    é negativa. Podemos chamá-la também de <i>velocidade de correção de erro</i>.</p>
+    
+    <p>Podemos dizer que a velocidade de correção é sempre <i>proporcional</i> ao
+    erro. Se o erro é grande, a velocidade de correção tem que ser grande. Se o
+    erro é pequeno, a velocidade deve ser baixa.</p>
+</div>    
+    
+<div id="p21">            
+    
+    <p>A palavra chave é proporcional. Tendo a noção de erro, podemos dizer
+    (programar) então que a velocidade sempre é igual ao erro (lembrando que
+    o motor só irá girar até sua velocidade máxima de qualquer maneira).
+    Veja como implementar isso.</p>
+    
+    <script>
+        function script_p21() {
+            exibirFase(6);
+        }
+    </script>    
+</div>    
+    
+<div id="p22">            
+    
+    <p>O que achou? Consegue entender como a velocidade é porpocional ao erro?</p>
+    
+    <p>A única coisa que está faltando e que poderíamos ter em nosso sistema é uma
+    forma de indicar se desejamos uma correção de erro mais brusca (mais rápida) 
+    ou mais suave (mais lenta). Podemos, por exemplo, ao invés de indicar uma correção
+    completa do erro, pedir por uma correção de apenas metade do erro. Ou do dobro
+    do erro.<p>
+</div>    
+    
+<div id="p23">            
+    
+    <p>Como a velocidade é proporcional ao erro, podemos inserir um "fator de 
+    compensação". Um outro nome possível seria "constante de proporcionalidade".
+    Vamos dar um nome abreviado e chamar esse parâmetro de "kp". O algoritmo
+    de cálculo de movimento, então, ficaria assim.</p>
+    
+    <script>
+        function script_p23() {
+            exibirFase(7);
+        }
+    </script>    
+</div>    
+    
+<div id="p24">            
+    
+    <p>Pronto! Temos um algoritmo de PID (na verdade, apenas "P") implementado.
+    A velocidade de correção é calculada, dentro da função de movimentação, como
+    uma velocidade proporcional ao erro.</p>
+    
+    <p>Os outros elementos do PID podem ser também facilmente inseridos.</p>
+</div>    
+    
+<div id="p25">            
+    
+    <p>Somando os erros conforme eles acontecem em uma variável acumuladora, temos
+    o "histórico acumulado" (ou integral) do erro.</p>
+
+    <p>Calculando a diferença entre o erro do último período de cálculo e o erro
+    atual temos uma medida de "velocidade do erro" (ou derivada).</p>
+</div>    
+    
+<div id="p26">            
+    
+    <p>Podemos usar o mesmo truque e aplicar constantes de proporcionalidade
+    nesses outros dois fatores (chamaremos respectivamente de "ki" e "kd" para
+    o erro integral e derivado).</p>
+    
+    <script>
+        function script_p26() {
+            exibirFase(8);
+        }
+    </script>        
+</div>
+
+<div id="p27">
+    <p>Assim temos nosso sistema PID completo!</p>           
+    
+</div>
+
+<div id="p28">
+    <p>Espero que você tenha apreciado esse pequeno tutorial sobre programação
+    de PIDs aplicados a movimentação de motores e máquinas.</p>               
+    
+    <p>Mais informações, você pode entrar em contato comigo pelo site
+    <a href='http://matheusd.com' target='_blank'>matheusd.com</a>.</p>
+</div>
+
+</html>
