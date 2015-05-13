@@ -348,4 +348,98 @@
     <a href='http://matheusd.com' target='_blank'>matheusd.com</a>.</p>
 </div>
 
+<script>
+function calculoPid1(posicaoAtual, posicaoDesejada) {
+        //As únicas coisas que temos para trabalhar são: 
+        //posicaoAtual = Aonde o motor/ferramenta está nesse momento
+        //posicaoDesejada = Aonde queremos posicionar o motor/ferramenta
+        //velocidadeMotor = A velocidade de giro que queremos aplicar ao motor
+        
+        //essa função de cálculo é executada 1 vez "por ciclo" de processamento 
+        //(digamos, 1 vez por segundo)
+        
+        //velocidadeMotor = ???????
+    }
+    
+        
+    function calculoPid2(posicaoAtual, posicaoDesejada) {
+        //tentativa mais trivial: mover na direção da posição desejada
+        if (posicaoDesejada > posicaoAtual) {
+            velocidadeMotor = 1;
+        } else if (posicaoDesejada < posicaoAtual) {
+            velocidadeMotor = -1;
+        }
+    }
+    
+        
+    function calculoPid3(posicaoAtual, posicaoDesejada) {
+        //levar em consideração quando chega na posição desejada
+        if (posicaoDesejada == posicaoAtual) {
+            velocidadeMotor = 0;
+        } else if (posicaoDesejada > posicaoAtual) {
+            velocidadeMotor = 1;
+        } else if (posicaoDesejada < posicaoAtual) {
+            velocidadeMotor = -1;
+        }
+    }
+    
+        
+    function calculoPid4(posicaoAtual, posicaoDesejada) {
+        //levar em consideração quando mover em posições não exatas (com ponto decimal)
+        if (posicaoDesejada == posicaoAtual) {
+            velocidadeMotor = 0;
+        } else if (posicaoDesejada > posicaoAtual) {            
+            if ((posicaoDesejada - posicaoAtual) < 1) {
+                velocidadeMotor = posicaoDesejada - posicaoAtual;
+            } else {
+                velocidadeMotor = 1;
+            }
+        } else if (posicaoDesejada < posicaoAtual) {
+            if (posicaoAtual - posicaoDesejada < 1) {
+                velocidadeMotor = posicaoDesejada - posicaoAtual;
+            } else {
+                velocidadeMotor = -1;
+            }
+        }
+    }
+    
+    
+    function calculoPid5(posicaoAtual, posicaoDesejada, erro) {
+        //usar erro de posicionamento ao invés de posições
+        //erro = posicaoDesejada - posicaoAtual        
+        //isso simplifica a função de velocidade
+        if ((erro < 1) && (erro > 0)) velocidadeMotor = -erro;
+        else if ((erro > -1) && (erro < 0)) velocidadeMotor = -erro;
+        else if (erro > 0) velocidadeMotor = +1;
+        else if (erro < 0) velocidadeMotor = -1;
+        else velocidadeMotor = 0;
+    }
+    
+    function calculoPid6(posicaoAtual, posicaoDesejada, erro) {
+        //O erro é proporcional à velocidade desejada (ou o contrário: a velocidade
+        //desejada sempre é proporcional ao erro).
+        //então podemos simplificar ainda mais a função
+        velocidadeMotor = erro;
+    }
+    
+    
+    
+    function calculoPid7(posicaoAtual, posicaoDesejada, erro, somaErro, velErro, kp, ki, kd) {
+        //podemos querer aumentar o diminuir a velocidade de correção, então usamos
+        //uma constante de proporcionalidade para controlar a velocidade de correção
+        //do erro
+        velocidadeMotor = erro * kp;
+    }
+    
+    
+    
+    function calculoPid8(posicaoAtual, posicaoDesejada, erro, somaErro, velErro, kp, ki, kd) {
+        //somaErro = soma histórica dos erros (somaErro = somaErro + erro em cada período)
+        //velErro = erro - erroAnterior (erroAnterior é o erro que aconteceu no ciclo imediatamente
+        //anterior ao atual)        
+        velocidadeMotor = erro*kp + somaErro * ki + velErro *kd;        
+    }
+    
+</script>    
+
 </html>

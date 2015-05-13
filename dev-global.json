@@ -1,0 +1,16 @@
+{
+    "arquivoPassos": "passos.html",
+    "prefixoFuncCalcPid": "calculoPid",
+    "varVelMotor": "velocidadeMotor",
+    
+    "labels": {
+        "posicao": "posicao",
+        "posDesejada": "posDesejada",
+        "velocidade": "velocidade",
+        "erro": "erro",
+        "somaErro": "somaErro",
+        "velErro": "velErro",
+        "velTrajetoria": "velTrajetoria",
+        "ruido": "ruido"
+    }
+}

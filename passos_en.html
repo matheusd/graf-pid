@@ -1,0 +1,447 @@
+<html>
+
+<div id="p1">
+    <p>Let's learn how to code a PID and get some intuition on how it works.</p>    
+</div>
+
+<div id="p2">
+    <p>Imagine the following situation: you, a recently graduated engineer or
+        computer programmer was hired to automate a linear cutting machine.</p>
+    
+    <p>This machine has an electric motor, conected through a set of gears 
+        to a tool (let's say, a saw) that moves in a vertical line.</p>    
+</div>    
+    
+<div id="p3">    
+    <p>When the motor spins clockwise, the tool moves in one direction (let's say, 
+        from bottom to top or "positive" direction) and when the motor spins counter-clockwise, the tool
+        moves in the inverse direction (from top to bottom, or "negative" direction).</p>
+    
+    <p>Each revolution of the motor produces a proportional movement of the tool.
+        Let's say that, due to the specific transmission system, one revolution
+        of the engine equals a 1 mm (one millimeter) displacement of the the tool.
+        And the whole machine has a maximum speed of 3mm/second (which means the
+        motor can spin at a maximum rate of 3 revolutions per second).</p>
+</div>    
+    
+<div id="p4">    
+    
+    <p>In order to automate this system, you have only three physical elements you
+        can interact with: the current position motor (which, just as a reminder,
+        is proportional to the position of the tool), the desired position of the tool
+        (let's say it's a given stock that needs cutting) and the speed of that
+        the motor spins, which you can use to position the tool.</p>
+    
+    <p>How would you place the tool at the desired position if you were controlling
+        the machine manually?</p>    
+</div>    
+    
+<div id="p5">        
+    <p>Let's say the tool must be at the position x = 500mm. Meaning, we want to spin
+        the motor such that the tool is positioned 500 mm above its central point
+        of reference.</p>
+
+    <p>Manually, we'd do the following: spin the motor until it is near the 
+        desired position. As it aproaches this position, we decelerate it
+        until it is as close as possible to it. At that moment, we turn off
+        the motor.</p>
+    
+    <p>To help you out, I've put the desired position as 500.</p>
+    
+    <p>Try to reach it, manually controlling the speed of the motor!</p>
+    
+    <script>
+        function script_p5() {
+            $("#posDesejada").val(500);
+            $("#btnSetarPosDesejada").click();
+            $("#btnSetarVel").focus();
+        }
+    </script>
+</div>    
+    
+<div id="p6">    
+    <p>Ok. Manually, we can position the motor/tool near the desired position.</p>
+    
+    <p>I hope you can notice a couple of things: if you want to move to tool downards,
+        you must input a negative velocity. If the tool overshoots the desired point,
+        you have to set the speed to the inverse value (inverting the sign of the speed).
+        To keep the tool at a fixed position, your speed must be equal to zero.</p>
+        
+</div>    
+    
+<div id="p7">        
+    
+    <p>
+    How could we do the same procedure in an automated way? How could we create
+        a computer program that is able to position the tool, taking into account
+        that we have only two input variables (the current position and the desired
+        position) and only one output mechanism (the speed of the motor)?</p>
+    
+    <p>
+    With your programming knowledge, which would be the most simple software you
+    could create to solve this problem? Think about it a bit.</p>    
+    
+    <script>
+        function script_p7() {
+            exibirFase(1);
+        }
+    </script>
+</div>    
+    
+<div id="p8">        
+    
+    <p>The most trivial algorithm I can imagine would be something like this:
+        if the desired position for the tool is above the current position (in
+        other words, in the positive side of the movement axis') we spin the motor
+        in the positive direction. Otherwise, we (meaning, if the desired position
+        is below the current position - negative side of the axis) we spin the 
+        motor in the negative direction.</p>
+    
+    <p>Written in code, it would be something like you see above.</p>
+    
+    <p>Try to alter the desired position to various values to see what happens
+        (try for example, 100, 200, -100, 0).</p>
+        
+    <script>
+        function script_p8() {
+            exibirFase(2);
+            $("#habPid").attr("checked", "checked");
+            
+            $("#posDesejada").val(100);
+            $("#btnSetarPosDesejada").click();
+            $("#btnSetarVel").focus();            
+        }
+    </script>
+</div>    
+    
+<div id="p9">        
+    
+    <p>Remember: spinning the motor with a positive speed means it moves up. 
+    Spinning the motor with negative speed means it moves down.</p>
+    
+    
+    <p>Check that, enabling this code, when you get close to the desired position,
+    the speed of the motor starts to oscilate significantly. Why?</p>
+    
+</div>    
+    
+<div id="p10">            
+    
+    <p>It's because we forgot the zero situation! When the desired position is 
+        exactly equal to the current position, we can stop the motor completely.</p>
+    
+    <script>
+        function script_p10() {
+            exibirFase(3);
+        }
+    </script>
+</div>    
+    
+<div id="p11">            
+    
+    <p>Perfect! Now our automated system is capable of moving a linear axis and
+    position it anywhere. Or almost. Try to position it at a non-integer (decimal)
+    position. Try 100.30 for example. What happens?</p>
+    
+</div>    
+    
+<div id="p12">            
+    
+    <p>More oscilation at the motor speed. This kind of issue can be called a
+    numerical instability: our algorithm doesn't behave well with fractional numbers.</p>
+    
+    <p>How can we make the algorith more stable? Can you think of an alternative?</p>    
+</div>    
+    
+<div id="p13">            
+    
+    <p>Let's identify when the problem happens. It happens when the distance
+    between the desired position and the current position is smaller than
+    the speed (fixed at 1 mm/second).</p>    
+    
+    <p>When the distance is smaller than this value, the motor jumps to 
+    a position beyond the desired (an <i>overshoot</i>). At the next cycle, 
+    our algorithm tries to correct this jump by coming back, however it goes
+    again beyond the desired position.</p>
+        
+</div>    
+    
+<div id="p14">            
+    
+    <p>A practical example: if we wish to reach the position x = 100.30 and the 
+    current position is 100.00, the motor's speed of +1 will provoke an overshoot 
+    to position 101.00. At the next cycle, the speed will be recalculated to -1
+    and the motor will move to position x = 100.00 again. This back and forth is
+    what causes the oscilation.</p>
+    
+    <p>We should modify this algorithm to consider the case when the difference
+    between the current position and the desired position is less than 1
+    (the movement speed). How can we do that?</p>    
+</div>    
+    
+<div id="p15">            
+    
+    <p>One possibility is indicated above. We must consider the case when the
+    motor is below the desired point and above it.</p>
+    
+    <p>This algorithm is more robust than the previous ones. But it has two problems:
+    a functional one and an aestetic one.</p>
+    
+    
+    <script>
+        function script_p15() {
+            exibirFase(4);
+        }
+    </script>
+</div>    
+    
+<div id="p16">            
+    
+    <p>Though it solves our current problem, it doesn't take into account the
+    fact that the motor's speed could be higher.</p>    
+    
+    <p>Another problem is that this algorithm is complex: look at the amount
+    of <i>IF</i>clauses, one inside the other. It isn't a pleasant code to
+    look, understand and debug.</p>
+    
+    <p>How can we simplify this code?</p>    
+</div>    
+    
+<div id="p17">            
+
+    <p>The first thing we can notice is that this code is entirely based in comparisons
+    between the current and the desired positions. We can simplify the relationship
+    between these two variables by introducing a third: the concept of a "following
+    error".</p>
+    
+    <p>The following error is the difference between the current and the desired
+    positions. Quite literally: it's the first variable minus the second one.</p>
+    
+    <p>The following error (or more simply, "error") is a measure of the distance
+    between the current and desired positions. It shows how far away one is from
+    the other.</p>
+</div>    
+    
+<div id="p18">            
+    
+    <p>The larger the error, the farther the tool is from where we want it to be.
+    The smaller, the closer. When the error is exactly zero, the tool is exactly
+    where we want it to be.</p>
+    
+    
+    <p>With this notion of "error" we can simplify our algorithm the following
+    way: instead of comparing the positions between themselves, we compare
+    only if the error is grater than zero (we need to move up) or if the error
+    is smaller than zero (we need to move down).</p>
+    
+    <script>
+        function script_p18() {
+            exibirFase(5);
+        }
+    </script>    
+</div>    
+    
+<div id="p19">            
+    
+    <p>If the error is between zero and the correction speed, we move the
+    motor just enough for it to reach the desired position.</p>
+    
+    <p>Try to apply various movement situations and verify that it really works!</p>    
+</div>    
+    
+<div id="p20">            
+    
+    <p>This algorithm is already simpler to understand. But we haven't solved the
+    maximum speed problem. Can we do better than this?</p>
+    
+    
+    <p>Notice how on this last algorithm the speed of the motor always follows the
+    error: if the error is positive, the speed is positive. If the error is negative,
+    the speed is negative. We could also call this speed the <i>error correction speed</i>.</p>
+    
+    <p>We say that the error correction speed is always <i>proportional</i> to
+    the error. If the error is big, the speed must also be high. If the error
+    is small, the speed must be low.</p>
+</div>    
+    
+<div id="p21">            
+    
+    <p>The keyword here is <b>proportional</p>. With this concept of error,
+    we can say (code) that the speed is always equal to the error (keeping
+    in mind that the motor will only speed up to it's maximum speed anyway).</p>
+    
+    <p>Let's see how to implement that.</p>
+    
+    <script>
+        function script_p21() {
+            exibirFase(6);
+        }
+    </script>    
+</div>    
+    
+<div id="p22">            
+    
+    <p>What do you think? Can you understand how the speed is proportional to the
+    error?</p>
+    
+    <p>The only thing that is really missing and that we could have in our program
+    is a way to show whether we want a more sudden (an fast) error correcting speed
+    or a more sensitive (and slow) one. We can, as an example, instead of use the
+    full error as the correction speed, ask for only half of it. Or double.</p>
+    
+</div>    
+    
+<div id="p23">            
+    
+    <p>Since the speed is proportional to the error, we can insert a "compensating
+    factor". Another possible name would be "porportional constant". Let's give
+    this constant a nickname, and call it "kp". The algorithm to calculate 
+    the movement, than, would be like this.</p>
+    
+    <script>
+        function script_p23() {
+            exibirFase(7);
+        }
+    </script>    
+</div>    
+    
+<div id="p24">            
+    
+    <p>There you go! We have just coded a PID (actually, just a "P") loop.
+    The correction speed is calculated, inside the movement function, as 
+    a speed proportional to the error.</p>
+    
+    <p>The other elements of a PID controller can also be easily inserted.</p>    
+</div>    
+    
+<div id="p25">            
+    
+    <p>Adding up the errors as they happen in an accumulator, we have (in a sense)
+    the "accumulated history" (or integral) of the error.</p>
+    
+    <p>Calculating the difference between the error of the last period and 
+    current error we have a measure of the error's speed (or derivative).</p>    
+</div>    
+    
+<div id="p26">            
+    
+    <p>We can use the same trick and apply proportionality constants in these
+    two other factors (let's nickname them "ki" and "kd" for the integral and
+    derivative errors).</p>
+    
+    
+    <script>
+        function script_p26() {
+            exibirFase(8);
+        }
+    </script>        
+</div>
+
+<div id="p27">
+    <p>Now we have a complete PID controller!</p>
+</div>
+
+<div id="p28">
+    <p>I hope you have appreciated this little tutorial on how to code a PID
+    for automated machines.</p>
+    
+    <p>If you want more info, you can contact me by personal site
+    <a href='http://matheusd.com' target='_blank'>matheusd.com</a>.</p>
+    
+</div>
+
+<script>
+function calculatePid1(curPosition, desiredPos) {
+        //What we can work with:        
+        //curPosition = Where the motor/tool is currently positioned
+        //desiredPos = Where we want the motor/tool to be
+        //motorSpeed = The speed we wish to spin the motor (and move the tool)
+        
+        //this funciton is called in a loop, once "per calculating cycle"
+        //(let's just say, once a second).
+        
+        //motorSpeed = ???????
+    }
+    
+        
+    function calculatePid2(curPosition, desiredPos) {
+        //Trivial attempt: try to move in the desired direction
+        if (desiredPos > curPosition) {
+            motorSpeed = 1;
+        } else if (desiredPos < curPosition) {
+            motorSpeed = -1;
+        }
+    }
+    
+        
+    function calculatePid3(curPosition, desiredPos) {
+        //taking into account when we arrive at the desired position
+        if (desiredPos == curPosition) {
+            motorSpeed = 0;
+        } else if (desiredPos > curPosition) {
+            motorSpeed = 1;
+        } else if (desiredPos < curPosition) {
+            motorSpeed = -1;
+        }
+    }
+    
+        
+    function calculatePid4(curPosition, desiredPos) {
+        //taking into account non-exact positions (with a decimal point)        
+        if (desiredPos == curPosition) {
+            motorSpeed = 0;
+        } else if (desiredPos > curPosition) {            
+            if ((desiredPos - curPosition) < 1) {
+                motorSpeed = desiredPos - curPosition;
+            } else {
+                motorSpeed = 1;
+            }
+        } else if (desiredPos < curPosition) {
+            if (curPosition - desiredPos < 1) {
+                motorSpeed = desiredPos - curPosition;
+            } else {
+                motorSpeed = -1;
+            }
+        }
+    }
+    
+    
+    function calculatePid5(curPosition, desiredPos, error) {
+        //use following (positional) error instead of directly comparing positions        
+        //error = desiredPos - curPosition        
+        //This simplifies the calculation somewhat
+        if ((error < 1) && (error > 0)) motorSpeed = -error;
+        else if ((error > -1) && (error < 0)) motorSpeed = -error;
+        else if (error > 0) motorSpeed = +1;
+        else if (error < 0) motorSpeed = -1;
+        else motorSpeed = 0;
+    }
+    
+    function calculatePid6(curPosition, desiredPos, error) {
+        //The error is proportional to the desired speed (or the converse, the
+        //desired speed to correct the error is always proportional to it).
+        //So we can simplify even more.
+        motorSpeed = error;
+    }
+    
+    
+    
+    function calculatePid7(curPosition, desiredPos, error, errorSum, errorSpeed, kp, ki, kd) {
+        //We may want to speed up or slow down the correction speed, so we
+        //use a proportionality constant to control the error correcting speed.
+        motorSpeed = error * kp;
+    }
+    
+    
+    
+    function calculatePid8(curPosition, desiredPos, error, errorSum, errorSpeed, kp, ki, kd) {
+        //errorSum = the historic sum of errors (errorSum = errorSum + error in each cycle)
+        //errorSPeed = error - previousError (previousError is error that 
+        //happened the cycle before this one)        
+        motorSpeed = error*kp + errorSum * ki + errorSpeed *kd;        
+    }
+    
+</script>    
+
+
+</html>

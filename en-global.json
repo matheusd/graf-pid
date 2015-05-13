@@ -1,0 +1,28 @@
+{
+    "pausar": "Pause",
+    "habilitarCalcPid": "Enable speed/PID calculation",
+    "setarVel": "Set speed",
+    "setarPosDesejada": "Set desired Position",
+    "moverComAcel": "Move with accel.",
+    "codigo": "Code",
+    "instrucoes": "Instructions",
+    "anterior": "Previous",
+    "proximo": "Next",
+    "ocultar": "Hide",
+    "fase": "Phase",
+    "arquivoPassos": "passos_en.html",
+    "prefixoFuncCalcPid": "calculatePid",
+    "varVelMotor": "motorSpeed",
+    
+    
+    "labels": {
+        "posicao": "position",
+        "posDesejada": "desiredPos",
+        "velocidade": "speed",
+        "erro": "error",
+        "somaErro": "errorSum",
+        "velErro": "errorSpeed",
+        "velTrajetoria": "trajSpeed",
+        "ruido": "noise"
+    }
+}

@@ -39,6 +39,10 @@ Você está escrevendo o software para controle desse motor. O que você faz?
         padding: 0.7em;
         font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
     }
+    
+    .flag {
+        cursor: pointer;
+    }
 </style>
 
 <div id="editor" style="display: none">function foo(items) {
@@ -50,12 +54,12 @@ Você está escrevendo o software para controle desse motor. O que você faz?
 </canvas> 
 
 <div style="float: right;">
-    <input type="checkbox" id="pause"> Pausar   
+    <input type="checkbox" id="pause"> <span data-i18n="pausar">Pausar</span>
     <br>
-    <input type="checkbox" id="habPid"> Habilitar Cálculo Velocidade<br>    
+    <input type="checkbox" id="habPid"> <span data-i18n="habilitarCalcPid">Habilitar Cálculo Velocidade</span><br>    
     
     <hr>
-    Fase<br>
+    <span data-i18n="fase">Fase</span><br>
     <button type="button" class="btnFase" data-fase-show="1">1</button>
     <button type="button" class="btnFase" data-fase-show="2">2</button>
     <button type="button" class="btnFase" data-fase-show="3">3</button>
@@ -67,16 +71,16 @@ Você está escrevendo o software para controle desse motor. O que você faz?
     
     <hr>
     <input type="text" style="width: 4em" id="velManual">
-    <button type="button" id="btnSetarVel">setar velocidade</button>
+    <button type="button" id="btnSetarVel" data-i18n="setarVel">setar velocidade</button>
     
     <hr>    
     <input type="text" style="width: 4em" id="posDesejada" value="500">
-    <button type="button" id="btnSetarPosDesejada">setar pos desejada</button>
+    <button type="button" id="btnSetarPosDesejada" data-i18n="setarPosDesejada">setar pos desejada</button>
     
     <div data-fase="7" style="display: none;">
     <hr>
     <input type="text" style="width: 4em" id="posDesejadaAcel" value="500">
-    <button type="button" id="btnMoverAcel">Mover com acel.</button>
+    <button type="button" id="btnMoverAcel" data-i18n="moverComAcel">Mover com acel.</button>
     </div>
     
     <div data-fase="6" style="display: none;">
@@ -87,8 +91,12 @@ Você está escrevendo o software para controle desse motor. O que você faz?
     </div>
     
     <hr>
-    <button type="button" id="btnCodigo">Código</button>
-    <button type="button" id="btnInstrucoes">Instruções</button>
+    <button type="button" id="btnCodigo" data-i18n="codigo">Código</button>
+    <button type="button" id="btnInstrucoes" data-i18n="instrucoes">Instruções</button>
+    
+    <hr>
+    <image class="flag" src="flag-br.gif" width="90" height="50" onclick="mudarLingua('dev');"> 
+    <image class="flag" src="flag-us.gif" width="90" height="50" onclick="mudarLingua('en');">
 
     <hr>
     <a href="http://matheusd.com" target="_blank">matheusd.com</a><br>
@@ -100,9 +108,9 @@ Você está escrevendo o software para controle desse motor. O que você faz?
     <div id="passos-conteudo">
     </div>
     <div>
-        <button type="button" id="btnPrevPasso">Anterior</button>
-        <button type="button" id="btnProxPasso">Próximo</button>
-        <button type="button" id="btnOcultarPassos" style="float: right">Ocultar</button>
+        <button type="button" id="btnPrevPasso" data-i18n="anterior">Anterior</button>
+        <button type="button" id="btnProxPasso" data-i18n="proximo">Próximo</button>
+        <button type="button" id="btnOcultarPassos" style="float: right" data-i18n="hide">Ocultar</button>
     </div>
 </div>
 
@@ -116,7 +124,9 @@ Você está escrevendo o software para controle desse motor. O que você faz?
     var seriesSomaErro = [0];
     var seriesVelErro = [0];
     var seriesVelTrajetoria = [0];
-    var seriesRuido = [0];
+    var seriesRuido = [0];    
+    
+    var labels = {};
     
     var velocidadeMotor = 0;
     var posicaoDesejada = 0;
@@ -132,6 +142,7 @@ Você está escrevendo o software para controle desse motor. O que você faz?
     var numIteracao = 0;
     
     var funcCalcPid = 'calculoPid1';
+    var varVelMotor = 'velocidadeMotor';
     
     var faseAtual = 1;
     
@@ -190,97 +201,6 @@ Você está escrevendo o software para controle desse motor. O que você faz?
         return number < 0 ? -1 : +1;
     }
     
-    function calculoPid1(posicaoAtual, posicaoDesejada) {
-        //As únicas coisas que temos para trabalhar são: 
-        //posicaoAtual = Aonde o motor/ferramenta está nesse momento
-        //posicaoDesejada = Aonde queremos posicionar o motor/ferramenta
-        //velocidadeMotor = A velocidade de giro que queremos aplicar ao motor
-        
-        //essa função de cálculo é executada 1 vez "por ciclo" de processamento 
-        //(digamos, 1 vez por segundo)
-        
-        //velocidadeMotor = ???????
-    }
-    
-        
-    function calculoPid2(posicaoAtual, posicaoDesejada) {
-        //tentativa mais trivial: mover na direção da posição desejada
-        if (posicaoDesejada > posicaoAtual) {
-            velocidadeMotor = 1;
-        } else if (posicaoDesejada < posicaoAtual) {
-            velocidadeMotor = -1;
-        }
-    }
-    
-        
-    function calculoPid3(posicaoAtual, posicaoDesejada) {
-        //levar em consideração quando chega na posição desejada
-        if (posicaoDesejada == posicaoAtual) {
-            velocidadeMotor = 0;
-        } else if (posicaoDesejada > posicaoAtual) {
-            velocidadeMotor = 1;
-        } else if (posicaoDesejada < posicaoAtual) {
-            velocidadeMotor = -1;
-        }
-    }
-    
-        
-    function calculoPid4(posicaoAtual, posicaoDesejada) {
-        //levar em consideração quando mover em posições não exatas (com ponto decimal)
-        if (posicaoDesejada == posicaoAtual) {
-            velocidadeMotor = 0;
-        } else if (posicaoDesejada > posicaoAtual) {            
-            if ((posicaoDesejada - posicaoAtual) < 1) {
-                velocidadeMotor = posicaoDesejada - posicaoAtual;
-            } else {
-                velocidadeMotor = 1;
-            }
-        } else if (posicaoDesejada < posicaoAtual) {
-            if (posicaoAtual - posicaoDesejada < 1) {
-                velocidadeMotor = posicaoDesejada - posicaoAtual;
-            } else {
-                velocidadeMotor = -1;
-            }
-        }
-    }
-    
-    
-    function calculoPid5(posicaoAtual, posicaoDesejada, erro) {
-        //usar erro de posicionamento ao invés de posições
-        //erro = posicaoDesejada - posicaoAtual        
-        //isso simplifica a função de velocidade
-        if ((erro < 1) && (erro > 0)) velocidadeMotor = -erro;
-        else if ((erro > -1) && (erro < 0)) velocidadeMotor = -erro;
-        else if (erro > 0) velocidadeMotor = +1;
-        else if (erro < 0) velocidadeMotor = -1;
-        else velocidadeMotor = 0;
-    }
-    
-    function calculoPid6(posicaoAtual, posicaoDesejada, erro) {
-        //O erro é proporcional à velocidade desejada (ou o contrário: a velocidade
-        //desejada sempre é proporcional ao erro).
-        //então podemos simplificar ainda mais a função
-        velocidadeMotor = erro;
-    }
-    
-    
-    
-    function calculoPid7(posicaoAtual, posicaoDesejada, erro, somaErro, velErro, kp, ki, kd) {
-        //podemos querer aumentar o diminuir a velocidade de correção, então usamos
-        //uma constante de proporcionalidade para controlar a velocidade de correção
-        //do erro
-        velocidadeMotor = erro * kp;
-    }
-    
-    
-    
-    function calculoPid8(posicaoAtual, posicaoDesejada, erro, somaErro, velErro, kp, ki, kd) {
-        //somaErro = soma histórica dos erros (somaErro = somaErro + erro em cada período)
-        //velErro = erro - erroAnterior (erroAnterior é o erro que aconteceu no ciclo imediatamente
-        //anterior ao atual)        
-        velocidadeMotor = erro*kp + somaErro * ki + velErro *kd;        
-    }
-    
     
     
     
@@ -320,6 +240,10 @@ Você está escrevendo o software para controle desse motor. O que você faz?
         if ($("#habPid").prop("checked")) {
             //calculoPid3(posicaoAtual, erro, erroAcumulado, velErro);
             window[funcCalcPid](posicaoAtual, posicaoDesejada, erro, erroAcumulado, velErro, kp, ki, kd);
+            
+            //ugly hack... quis simplificar fazendo uma atribuição global na função
+            //de cálculo de PID, acabou complicando depois na hora da tradução...
+            velocidadeMotor = window[varVelMotor];
         }
         
         if (velocidadeMotor > velMaximaMotor) var vel = velMaximaMotor;
@@ -357,20 +281,20 @@ Você está escrevendo o software para controle desse motor. O que você faz?
         ctx.fillStyle="#ffffff";
         ctx.fillRect(0,0,1000,1000);         
         
-        renderSeries(seriesPosicao, {label: 'posição', color: '#ff0000', yOffset: 300, yScale: 0.1});
-        renderSeries(seriesPosDesejada, {label: 'posDesejada', color: '#0000ff', yOffset: 300, yScale: 0.1});        
-        renderSeries(seriesVelocidade, {label: 'velocidade', color: '#00ff00', yOffset: 200, yScale: 10});
+        renderSeries(seriesPosicao, {label: labels.posicao, color: '#ff0000', yOffset: 300, yScale: 0.1});
+        renderSeries(seriesPosDesejada, {label: labels.posDesejada, color: '#0000ff', yOffset: 300, yScale: 0.1});        
+        renderSeries(seriesVelocidade, {label: labels.velocidade, color: '#00ff00', yOffset: 200, yScale: 10});
         
         
         if (faseAtual > 3) {
-            renderSeries(seriesErro, {label: 'erro', color: '#cccc00', yOffset: 400, yScale: 1});
+            renderSeries(seriesErro, {label: labels.erro, color: '#cccc00', yOffset: 400, yScale: 1});
         }
         
         if (faseAtual > 7) {
-            renderSeries(seriesSomaErro, {label: 'somaErro', color: '#cc00cc', yOffset: 500, yScale: 0.1});
-            renderSeries(seriesVelErro, {label: 'velErro', color: '#00cccc', yOffset: 550, yScale: 0.1});
-            renderSeries(seriesVelTrajetoria, {label: 'velTrajetoria', color: '#00ccee', yOffset: 100, yScale: 10});
-            renderSeries(seriesRuido, {label: 'ruído', color: '#cc00ee', yOffset: 50, yScale: 10});
+            renderSeries(seriesSomaErro, {label: labels.somaErro, color: '#cc00cc', yOffset: 500, yScale: 0.1});
+            renderSeries(seriesVelErro, {label: labels.velErro, color: '#00cccc', yOffset: 550, yScale: 0.1});
+            renderSeries(seriesVelTrajetoria, {label: labels.velTrajetoria, color: '#00ccee', yOffset: 100, yScale: 10});
+            renderSeries(seriesRuido, {label: labels.ruido, color: '#cc00ee', yOffset: 50, yScale: 10});
         }
     }
     
@@ -459,12 +383,22 @@ Você está escrevendo o software para controle desse motor. O que você faz?
         }
                 
         var editor = ace.edit("editor");
-        funcCalcPid = 'calculoPid' + fase;
+        funcCalcPid = $.t('prefixoFuncCalcPid') + fase;
         editor.setValue(window[funcCalcPid].toString());
         faseAtual = fase;
     }
     
+    function mudarLingua(lingua) {
+        localStorage.setItem('lang', lingua);
+        window.location.reload();
+    }
+    
     function setup() {  
+        $("body").i18n();
+        labels = $.t("labels", {returnObjectTrees: true});
+        varVelMotor = $.t("varVelMotor");
+        console.log(labels);
+    
         initSeries(seriesPosicao, 200);
         initSeries(seriesPosDesejada, 200);
         initSeries(seriesErro, 200);
@@ -491,13 +425,14 @@ Você está escrevendo o software para controle desse motor. O que você faz?
         
         kIndexChanged();
         
-        $("#txtPassos").load("passos.html", function() {
+        $("#txtPassos").load($.t('arquivoPassos'), function() {
             $("#passos-conteudo").append($("#p1").html());
         });        
     }
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/1.6.3/i18next-1.6.3.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.9/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
@@ -507,6 +442,20 @@ Você está escrevendo o software para controle desse motor. O que você faz?
     editor.setValue(window['calculoPid1'].toString());
 </script>
 
-<script>$(document).ready(setup);</script>
+<script>$(document).ready(function () {
+    var lang = localStorage.getItem('lang') || 'dev';
+    console.log(lang);
+    i18n.init({
+        resGetPath: "__lng__-__ns__.json",
+        lng: lang,        
+        ns: {            
+            namespaces: ['global'],
+            defaultNs: 'global',
+        },
+        useLocalStorage: false, 
+        //localStorageExpirationTime: 86400000, // in ms, default 1 week
+        lowerCaseLng: true
+    }, setup);
+});</script>
 </body>
 </html>
